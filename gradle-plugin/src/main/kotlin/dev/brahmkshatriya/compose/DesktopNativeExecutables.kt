@@ -1,5 +1,6 @@
 package dev.brahmkshatriya.compose
 
+import java.io.File
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.tasks.Exec
@@ -15,6 +16,7 @@ internal fun Project.configureDesktopNativeExecutable(executableSpec: DesktopNat
         val target = targets.findByName(conventionalTargetName) ?: return@forEach
         target.configureNativeExecutable(
             executableSpec = executableSpec,
+            conventionalTargetName = conventionalTargetName,
             buildTypes =
                 if (isHostTarget) {
                     setOf(NativeBuildType.DEBUG, NativeBuildType.RELEASE)
@@ -64,6 +66,7 @@ private fun Project.configureHostDesktopRunAliases(hostTarget: HostDesktopNative
 
 private fun Any.configureNativeExecutable(
     executableSpec: DesktopNativeExecutable,
+    conventionalTargetName: String,
     buildTypes: Set<NativeBuildType>,
 ) {
     val binaries = nativeBinaries()
@@ -73,7 +76,7 @@ private fun Any.configureNativeExecutable(
         existingExecutables.mapNotNull { binary ->
             val buildType = binary.nativeBuildType()
             if (buildType in buildTypes) {
-                binary.configureNativeExecutable(executableSpec)
+                binary.configureNativeExecutable(executableSpec, conventionalTargetName)
                 buildType
             } else {
                 null
@@ -84,13 +87,42 @@ private fun Any.configureNativeExecutable(
 
     binaries.createNativeExecutables(
         missingBuildTypes,
-        Action<Any> { binary -> binary.configureNativeExecutable(executableSpec) },
+        Action<Any> { binary ->
+            binary.configureNativeExecutable(executableSpec, conventionalTargetName)
+        },
     )
 }
 
-private fun Any.configureNativeExecutable(executableSpec: DesktopNativeExecutable) {
+private fun Any.configureNativeExecutable(
+    executableSpec: DesktopNativeExecutable,
+    conventionalTargetName: String,
+) {
     setNativeEntryPoint(executableSpec.requiredEntryPoint())
-    addNativeLinkerOptions(executableSpec.linkerOptions)
+    val defaultSearchPaths =
+        when (conventionalTargetName) {
+            "linuxX64" ->
+                listOf(
+                    "/usr/lib/x86_64-linux-gnu",
+                    "/lib/x86_64-linux-gnu",
+                    "/usr/x86_64-linux-gnu/lib",
+                    "/usr/local/lib",
+                    "/usr/lib",
+                )
+            "linuxArm64" ->
+                listOf(
+                    "/usr/lib/aarch64-linux-gnu",
+                    "/lib/aarch64-linux-gnu",
+                    "/usr/aarch64-linux-gnu/lib",
+                    "/usr/local/lib",
+                    "/usr/lib",
+                )
+            "macosArm64" -> listOf("/opt/homebrew/lib", "/opt/homebrew/opt/sdl3/lib", "/usr/local/lib")
+            "macosX64" -> listOf("/usr/local/lib", "/usr/local/opt/sdl3/lib")
+            else -> emptyList()
+        }
+    val existingSearchPaths =
+        defaultSearchPaths.filter { File(it).isDirectory }.map { "-L$it" }
+    addNativeLinkerOptions(existingSearchPaths + executableSpec.linkerOptions)
 }
 
 private const val HOST_DESKTOP_TARGET_NAME_CAPITALIZED = "Desktop"

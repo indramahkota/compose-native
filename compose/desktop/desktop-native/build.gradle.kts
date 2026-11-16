@@ -646,7 +646,7 @@ kotlin {
     }
 
     if (composePlatformEnabled(ComposePlatforms.LinuxX64)) linuxX64 {
-        binaries.all { linkerOpts("-L/usr/lib") }
+        binaries.all { linkerOpts("-L/usr/lib", "-L/usr/lib/x86_64-linux-gnu") }
         compilerOptions {
             freeCompilerArgs.add("-Xbackend-threads=0")
             freeCompilerArgs.addAll(
@@ -671,6 +671,7 @@ kotlin {
     }
 
     if (composePlatformEnabled(ComposePlatforms.LinuxArm64)) linuxArm64 {
+        binaries.all { linkerOpts("-L/usr/lib", "-L/usr/lib/aarch64-linux-gnu") }
         compilerOptions {
             freeCompilerArgs.add("-Xbackend-threads=0")
             freeCompilerArgs.addAll(
