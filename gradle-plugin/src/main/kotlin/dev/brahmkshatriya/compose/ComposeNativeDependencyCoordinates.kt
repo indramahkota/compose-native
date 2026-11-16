@@ -16,7 +16,7 @@ internal fun composeForkCoordinateFor(
         if (
             (useDesktopNativeFork &&
                 family in COMPOSE_FAMILIES &&
-                !(family == "ui" && module == UI_UKIT_MODULE)) ||
+                !(family == "ui" && (module == UI_UKIT_MODULE || module.startsWith("ui-test")))) ||
                 "$family:$module" in CROSS_PLATFORM_COMPOSE_MODULES
         ) {
             return "$FORK_COMPOSE_GROUP_PREFIX$family:$module:$version"
