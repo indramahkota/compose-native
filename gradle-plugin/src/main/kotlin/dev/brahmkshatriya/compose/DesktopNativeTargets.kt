@@ -6,6 +6,7 @@ import org.gradle.api.Project
 /** Adds all desktop-native Kotlin targets when invoked from the `kotlin` block. */
 open class DesktopNativeTargets internal constructor(private val project: Project) {
     private var targetsCreated = false
+    private val requestedTargets = mutableSetOf<String>()
     private val binaryContainer = DesktopNativeBinaries { executable ->
         createTargets()
         project.configureDesktopNativeExecutable(executable)
@@ -13,14 +14,17 @@ open class DesktopNativeTargets internal constructor(private val project: Projec
     val binaries: DesktopNativeBinaries
         get() = binaryContainer
 
-    operator fun invoke() {
+    operator fun invoke(vararg targetNames: String) {
+        if (targetNames.isNotEmpty()) {
+            requestedTargets += targetNames
+        }
         createTargets()
     }
 
     private fun createTargets() {
         if (targetsCreated) return
         targetsCreated = true
-        project.createDesktopNativeTargets()
+        project.createDesktopNativeTargets(requestedTargets)
     }
 }
 

@@ -12,7 +12,7 @@ internal fun Project.configureDesktopNativeExecutable(executableSpec: DesktopNat
         hostDesktopNativeTarget(System.getProperty("os.name"), System.getProperty("os.arch"))
     DESKTOP_NATIVE_TARGET_SOURCE_SETS.forEach { (nativeTarget, conventionalTargetName) ->
         val isHostTarget = nativeTarget == hostTarget?.nativeTarget
-        val target = targets.getByName(conventionalTargetName)
+        val target = targets.findByName(conventionalTargetName) ?: return@forEach
         target.configureNativeExecutable(
             executableSpec = executableSpec,
             buildTypes =
@@ -26,9 +26,15 @@ internal fun Project.configureDesktopNativeExecutable(executableSpec: DesktopNat
     if (hostTarget != null) configureHostDesktopRunAliases(hostTarget)
 }
 
-internal fun Project.createDesktopNativeTargets() {
+internal fun Project.createDesktopNativeTargets(requestedTargets: Set<String> = emptySet()) {
     pluginManager.withPlugin(KOTLIN_MULTIPLATFORM_PLUGIN_ID) {
-        DESKTOP_NATIVE_TARGET_SOURCE_SETS.values.forEach { targetName ->
+        val targetsToCreate =
+            if (requestedTargets.isEmpty()) {
+                DESKTOP_NATIVE_TARGET_SOURCE_SETS.values
+            } else {
+                DESKTOP_NATIVE_TARGET_SOURCE_SETS.values.filter { it in requestedTargets }
+            }
+        targetsToCreate.forEach { targetName ->
             createKotlinNativeTarget(targetName)
         }
     }
