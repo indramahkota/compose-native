@@ -46,7 +46,7 @@ official Skiko compile coordinate. The Compose target closure is defined once by
   `lifecycle-viewmodel`, `lifecycle-viewmodel-compose`, `lifecycle-viewmodel-savedstate`
 - saved state and navigation: `savedstate`, `savedstate-compose`, `navigationevent-compose`
 - runtime and UI: `runtime`, `runtime-saveable`, `ui`, `ui-backhandler`, `ui-geometry`,
-  `ui-graphics`, `ui-skiko`, `ui-text`, `ui-unit`, `ui-util`, and `desktop-native`
+  `ui-graphics`, `ui-skiko`, `ui-text`, `ui-tooling-preview`, `ui-unit`, `ui-util`, and `desktop-native`
 - higher layers: `animation`, `animation-core`, `foundation`, `foundation-layout`,
   `animation-graphics`, `material`, `material-ripple`, `material3`, `components-resources`
 

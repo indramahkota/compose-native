@@ -185,6 +185,7 @@ private val ANDROIDX_COMPOSE_FORK_MODULES =
         "ui-graphics",
         "ui-skiko",
         "ui-text",
+        "ui-tooling-preview",
         "ui-unit",
         "ui-util",
     )

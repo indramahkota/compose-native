@@ -305,6 +305,7 @@ private val FORK_DESKTOP_IDE_MODULES =
         "ui" to "ui-graphics",
         "ui" to "ui-skiko",
         "ui" to "ui-text",
+        "ui" to "ui-tooling-preview",
         "ui" to "ui-unit",
         "ui" to "ui-util",
     )

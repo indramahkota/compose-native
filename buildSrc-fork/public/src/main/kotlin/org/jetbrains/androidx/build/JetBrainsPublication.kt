@@ -355,6 +355,7 @@ object JetBrainsPublication {
             ":compose:ui:ui-backhandler",
             ":compose:ui:ui-skiko",
             ":compose:ui:ui",
+            ":compose:ui:ui-tooling-preview",
             ":compose:animation:animation-core",
             ":compose:animation:animation-graphics",
             ":compose:animation:animation",
