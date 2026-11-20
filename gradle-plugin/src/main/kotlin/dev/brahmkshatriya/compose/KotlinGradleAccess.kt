@@ -58,6 +58,11 @@ internal fun Any.addNativeLinkerOptions(options: List<String>) {
 }
 
 internal fun Any.dependsOnSourceSet(sourceSet: Any) {
+    val existing =
+        javaClass.methods
+            .firstOrNull { it.name == "getDependsOn" && it.parameterCount == 0 }
+            ?.invoke(this) as? Set<*>
+    if (existing?.contains(sourceSet) == true) return
     javaClass.methods
         .single { it.name == "dependsOn" && it.parameterCount == 1 }
         .invoke(this, sourceSet)

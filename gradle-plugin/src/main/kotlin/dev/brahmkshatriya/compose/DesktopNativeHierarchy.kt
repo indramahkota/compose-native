@@ -24,23 +24,14 @@ internal fun Project.addDesktopNativeSourceSets() {
                 val desktop = sourceSets.getByName("desktopNative$compilation")
                 val linuxWindows = sourceSets.getByName("linuxWindows$compilation")
                 sourceSets.findByName("mingwX64$compilation")?.dependsOnSourceSet(linuxWindows)
-                sourceSets.addSharedPlatformSourceSet(
-                    "linux$compilation",
-                    LINUX_SOURCE_SET_NAMES.map { "$it$compilation" },
-                    listOf(linuxWindows),
-                )
-                val apple =
-                    sourceSets.addSharedPlatformSourceSet(
-                        "apple$compilation",
-                        APPLE_SOURCE_SET_NAMES.map { "$it$compilation" },
-                        listOf(sourceSets.getByName("common$compilation")),
-                    )
-                if (apple != null) {
-                    sourceSets.addSharedPlatformSourceSet(
-                        "macos$compilation",
-                        MACOS_SOURCE_SET_NAMES.map { "$it$compilation" },
-                        listOf(desktop, apple),
-                    )
+                if (LINUX_SOURCE_SET_NAMES.any { sourceSets.findByName("$it$compilation") != null }) {
+                    sourceSets.maybeCreate("linux$compilation").dependsOnSourceSet(linuxWindows)
+                }
+                val macosTargets = MACOS_SOURCE_SET_NAMES.mapNotNull { sourceSets.findByName("$it$compilation") }
+                if (macosTargets.isNotEmpty()) {
+                    val macos = sourceSets.maybeCreate("macos$compilation")
+                    macos.dependsOnSourceSet(desktop)
+                    macosTargets.forEach { it.dependsOnSourceSet(macos) }
                 }
             }
             sourceSets.addSharedPlatformSourceSet(
