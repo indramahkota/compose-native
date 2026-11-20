@@ -85,8 +85,13 @@ internal fun Project.createComposeNativeApplicationExtension() {
 
 internal fun Project.configureDesktopNativeApplicationConventions() {
     afterEvaluate {
+        val configuredTargetNames = desktopNativeConfiguredTargetNames()
         val executableTargets =
             DESKTOP_NATIVE_TARGETS.filter { target ->
+                val matchesDesktopNative =
+                    configuredTargetNames?.contains(target.sourceSetPrefix)
+                        ?: (target.platform != NativeApplicationPlatform.MACOS)
+                if (!matchesDesktopNative) return@filter false
                 val binaryTaskSuffix = target.taskSuffix
                 tasks.findByName("linkDebugExecutable$binaryTaskSuffix") != null ||
                     tasks.findByName("linkReleaseExecutable$binaryTaskSuffix") != null

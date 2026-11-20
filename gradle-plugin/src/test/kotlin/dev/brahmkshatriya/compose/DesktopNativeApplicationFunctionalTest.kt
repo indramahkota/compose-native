@@ -382,4 +382,100 @@ class DesktopNativeApplicationFunctionalTest {
         assertTrue(mergedResources.resolve("from-main.txt").isFile)
         assertTrue(mergedResources.resolve("from-kmp.txt").isFile)
     }
+
+    @Test
+    fun excludesManualMacosTargetWhenDesktopNativeRestrictsTargets() {
+        val projectDir = createTempDirectory("compose-native-manual-macos-test").toFile()
+        projectDir.deleteOnExit()
+        projectDir
+            .resolve("settings.gradle.kts")
+            .writeText(
+                """
+                pluginManagement {
+                    repositories {
+                        mavenCentral()
+                        gradlePluginPortal()
+                    }
+                }
+                dependencyResolutionManagement {
+                    repositories { mavenCentral() }
+                }
+                rootProject.name = "compose-native-manual-macos-test"
+                """
+                    .trimIndent()
+            )
+        projectDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                plugins {
+                    kotlin("multiplatform") version "$functionalTestKotlinVersion"
+                    id("dev.brahmkshatriya.compose")
+                }
+
+                kotlin {
+                    macosArm64 {
+                        binaries.executable {
+                            entryPoint = "com.example.main"
+                            linkerOpts("-lsqlite3")
+                        }
+                    }
+                    desktopNative("linuxX64", "linuxArm64", "mingwX64")
+                    desktopNative {
+                        binaries.executable {
+                            entryPoint = "com.example.main"
+                            linkerOpts("-lsqlite3")
+                        }
+                    }
+                }
+
+                tasks.register("verifyManualMacosExcluded") {
+                    doLast {
+                        val kotlinExt = project.extensions.getByName("kotlin")
+                        @Suppress("UNCHECKED_CAST")
+                        val targets =
+                            kotlinExt.javaClass.methods
+                                .first { it.name == "getTargets" && it.parameterCount == 0 }
+                                .invoke(kotlinExt) as org.gradle.api.NamedDomainObjectContainer<Any>
+                        val macos = targets.getByName("macosArm64")
+                        val binaries =
+                            macos.javaClass.methods
+                                .first { it.name == "getBinaries" && it.parameterCount == 0 }
+                                .invoke(macos) as Iterable<*>
+                        val executables =
+                            binaries.filterNotNull().filter { binary ->
+                                binary.javaClass.methods.any {
+                                    it.name == "setEntryPoint" && it.parameterCount == 1
+                                }
+                            }
+                        check(executables.isNotEmpty())
+                        executables.forEach { binary ->
+                            val options =
+                                binary.javaClass.methods
+                                    .first { it.name == "getLinkerOpts" && it.parameterCount == 0 }
+                                    .invoke(binary) as List<*>
+                            check("-lSDL3" !in options) { "Unexpected -lSDL3 in " + options }
+                            check(options.none { it.toString().contains("sdl3", ignoreCase = true) }) {
+                                "Unexpected SDL3 path in " + options
+                            }
+                            check(options.count { it == "-lsqlite3" } == 1) {
+                                "Expected single -lsqlite3 in " + options
+                            }
+                        }
+                        check(tasks.findByName("prepareMacosArm64ReleaseAppBundle") == null)
+                        check(tasks.findByName("packageMacosArm64ReleaseDmg") == null)
+                        check(tasks.findByName("runReleaseExecutableDesktop") == null)
+                        check(tasks.findByName("prepareLinuxX64ReleaseAppDir") != null)
+                    }
+                }
+                """
+                    .trimIndent()
+            )
+
+        GradleRunner.create()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments("verifyManualMacosExcluded", "--no-configuration-cache")
+            .build()
+    }
 }

@@ -6,12 +6,24 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.Exec
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 
+internal fun Project.desktopNativeConfiguredTargetNames(): Set<String>? =
+    if (extensions.extraProperties.has(DESKTOP_NATIVE_TARGETS_EXTRA_PROPERTY)) {
+        @Suppress("UNCHECKED_CAST")
+        extensions.extraProperties.get(DESKTOP_NATIVE_TARGETS_EXTRA_PROPERTY) as Set<String>
+    } else {
+        null
+    }
+
 internal fun Project.configureDesktopNativeExecutable(executableSpec: DesktopNativeExecutable) {
     executableSpec.requiredEntryPoint()
     val targets = kotlinNativeTargets()
+    val configuredTargetNames = desktopNativeConfiguredTargetNames()
     val hostTarget =
         hostDesktopNativeTarget(System.getProperty("os.name"), System.getProperty("os.arch"))
     DESKTOP_NATIVE_TARGET_SOURCE_SETS.forEach { (nativeTarget, conventionalTargetName) ->
+        if (configuredTargetNames != null && conventionalTargetName !in configuredTargetNames) {
+            return@forEach
+        }
         val isHostTarget = nativeTarget == hostTarget?.nativeTarget
         val target = targets.findByName(conventionalTargetName) ?: return@forEach
         target.configureNativeExecutable(
@@ -25,17 +37,24 @@ internal fun Project.configureDesktopNativeExecutable(executableSpec: DesktopNat
                 },
         )
     }
-    if (hostTarget != null) configureHostDesktopRunAliases(hostTarget)
+    if (hostTarget != null &&
+        (configuredTargetNames == null || hostTarget.factoryMethodName in configuredTargetNames)
+    ) {
+        configureHostDesktopRunAliases(hostTarget)
+    }
 }
 
 internal fun Project.createDesktopNativeTargets(requestedTargets: Set<String> = emptySet()) {
+    val targetsToCreate =
+        if (requestedTargets.isEmpty()) {
+            DESKTOP_NATIVE_TARGET_SOURCE_SETS.values.toSet()
+        } else {
+            DESKTOP_NATIVE_TARGET_SOURCE_SETS.values.filter { it in requestedTargets }.toSet()
+        }
+    // Remember which targets were created via `desktopNative(...)` so manual targets (like macosArm64
+    // using official Compose) are not treated as desktopNative SDL3 executables.
+    extensions.extraProperties.set(DESKTOP_NATIVE_TARGETS_EXTRA_PROPERTY, targetsToCreate)
     pluginManager.withPlugin(KOTLIN_MULTIPLATFORM_PLUGIN_ID) {
-        val targetsToCreate =
-            if (requestedTargets.isEmpty()) {
-                DESKTOP_NATIVE_TARGET_SOURCE_SETS.values
-            } else {
-                DESKTOP_NATIVE_TARGET_SOURCE_SETS.values.filter { it in requestedTargets }
-            }
         targetsToCreate.forEach { targetName ->
             createKotlinNativeTarget(targetName)
         }
@@ -126,3 +145,4 @@ private fun Any.configureNativeExecutable(
 }
 
 private const val HOST_DESKTOP_TARGET_NAME_CAPITALIZED = "Desktop"
+private const val DESKTOP_NATIVE_TARGETS_EXTRA_PROPERTY = "compose.native.desktopNativeTargets"
