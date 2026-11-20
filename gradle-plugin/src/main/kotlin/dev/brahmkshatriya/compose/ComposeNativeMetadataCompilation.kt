@@ -12,7 +12,6 @@ import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputDirectory
@@ -155,21 +154,10 @@ internal fun Project.configureMetadataCompilation() {
             if (task.name.isKotlinMetadataCompilationTask()) {
                 task.dependsOn(repairCommonMetadata)
                 task.replaceLibraries(this, repairedCommonLibraries)
-                if (task.hasKotlinNativeCompilerOptions()) {
-                    task.addNativeLibraryCompilerArguments(
-                        this,
-                        repairedCommonLibraries,
-                        "composeNativeCommonMetadataLibraries",
-                    )
-                }
             }
             if (task.name == COMPILE_DESKTOP_NATIVE_MAIN_METADATA_TASK) {
                 val cinteropLibraries = representativeNativeLibraries.filter(::isCInteropKlib)
-                task.addNativeLibraryCompilerArguments(
-                    this,
-                    cinteropLibraries,
-                    "composeNativeSharedCInteropLibraries",
-                )
+                task.appendLibraries(cinteropLibraries)
             }
         }
     }
@@ -196,40 +184,13 @@ private fun Task.replaceLibraries(project: Project, libraries: Any) {
     target.setFrom(originals, repaired)
 }
 
-private fun Task.hasKotlinNativeCompilerOptions(): Boolean =
-    javaClass.methods.any { method ->
-        method.name == "getCompilerOptions" &&
-            method.parameterCount == 0 &&
-            method.returnType.name == "org.jetbrains.kotlin.gradle.dsl.KotlinNativeCompilerOptions"
-    }
-
 @Suppress("UNCHECKED_CAST")
-private fun Task.addNativeLibraryCompilerArguments(
-    project: Project,
-    libraries: FileCollection,
-    inputPropertyName: String,
-) {
-    val compilerOptions =
+private fun Task.appendLibraries(libraries: FileCollection) {
+    val target =
         javaClass.methods
-            .firstOrNull { method ->
-                method.name == "getCompilerOptions" &&
-                    method.parameterCount == 0 &&
-                    method.returnType.name ==
-                        "org.jetbrains.kotlin.gradle.dsl.KotlinNativeCompilerOptions"
-            }
-            ?.invoke(this) ?: return
-    val freeCompilerArgs =
-        compilerOptions.javaClass.methods
-            .singleOrNull { it.name == "getFreeCompilerArgs" && it.parameterCount == 0 }
-            ?.invoke(compilerOptions) as? ListProperty<String> ?: return
-    inputs.files(libraries).withPropertyName(inputPropertyName)
-    freeCompilerArgs.addAll(
-        project.providers.provider {
-            libraries.files.sortedBy(File::getAbsolutePath).flatMap { file ->
-                listOf("-library", file.absolutePath)
-            }
-        }
-    )
+            .singleOrNull { it.name == "getLibraries" && it.parameterCount == 0 }
+            ?.invoke(this) as? ConfigurableFileCollection ?: return
+    target.from(libraries)
 }
 
 private fun isCInteropKlib(file: File): Boolean {

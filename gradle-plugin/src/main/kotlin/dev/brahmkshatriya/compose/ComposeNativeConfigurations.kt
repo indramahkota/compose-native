@@ -32,7 +32,7 @@ internal fun String.isAndroidConfiguration(): Boolean = contains("android", igno
 private const val RESOLVABLE_METADATA_CONFIGURATION_SUFFIX = "ResolvableDependenciesMetadata"
 
 private val DESKTOP_NATIVE_CONFIGURATION_MARKERS =
-    listOf("desktopnative", "linuxx64", "linuxarm64", "mingwx64", "macosx64", "macosarm64")
+    listOf("desktopnative", "linuxx64", "linuxarm64", "mingwx64")
 
 private val REDIRECTED_NATIVE_CONFIGURATION_MARKERS =
     listOf(
@@ -48,4 +48,4 @@ private val REDIRECTED_NATIVE_CONFIGURATION_MARKERS =
     )
 
 private val SHARED_NATIVE_MAIN_CONFIGURATION_PREFIXES =
-    listOf("desktopNativeMain", "linuxWindowsMain", "linuxMain", "macosMain")
+    listOf("desktopNativeMain", "linuxWindowsMain", "linuxMain")

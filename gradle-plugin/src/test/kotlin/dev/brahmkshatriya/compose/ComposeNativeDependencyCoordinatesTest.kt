@@ -213,6 +213,16 @@ class ComposeNativeDependencyCoordinatesTest {
                 includeAndroidx = false,
             )
         )
+        assertNull(
+            composeForkCoordinateFor(
+                "org.jetbrains.compose.components",
+                "components-resources",
+                "1.12.10-alpha02",
+                useDesktopNativeFork = true,
+                includeAndroidx = false,
+                includeComponentsResources = false,
+            )
+        )
         assertEquals(
             "dev.brahmkshatriya.androidx.lifecycle:lifecycle-runtime:1.12.10-alpha02",
             composeForkCoordinateFor(

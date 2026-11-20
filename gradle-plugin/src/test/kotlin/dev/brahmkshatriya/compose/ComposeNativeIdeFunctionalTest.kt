@@ -96,12 +96,12 @@ class ComposeNativeIdeFunctionalTest {
             projectDir.resolve("build/ide/dependencies/json/commonMain.json").readText()
         assertContains(
             commonMainModel,
-            "org.jetbrains.compose.ui:ui:1.13.0-beta01",
+            "org.jetbrains.compose.ui:ui:1.13.0-alpha01",
             message = "The IDE model must contain official Compose UI metadata",
         )
         assertContains(
             commonMainModel,
-            "org.jetbrains.compose.ui:ui-unit:1.13.0-beta01",
+            "org.jetbrains.compose.ui:ui-unit:1.13.0-alpha01",
             message = "The IDE model must contain the metadata that defines Dp and dp",
         )
         assertContains(
@@ -308,7 +308,7 @@ class ComposeNativeIdeFunctionalTest {
 
                 kotlin {
                     jvm()
-                    desktopNative()
+                    desktopNative("linuxX64", "linuxArm64", "mingwX64", "macosArm64")
 
                     sourceSets {
                         val skiaMain by creating {
@@ -320,7 +320,7 @@ class ComposeNativeIdeFunctionalTest {
                             }
                         }
                         jvmMain.get().dependsOn(skiaMain)
-                        linuxX64Main.get().dependsOn(skiaMain)
+                        macosArm64Main.get().dependsOn(skiaMain)
                         desktopNativeMain.dependencies {
                             implementation("dev.brahmkshatriya.compose.ui:ui:1.13.0-alpha05")
                         }

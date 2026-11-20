@@ -114,7 +114,7 @@ class ComposeNativeRedirectsTest {
             ),
         )
         assertEquals(
-            "androidx.compose.runtime:runtime-linuxx64:1.13.0-beta01",
+            "androidx.compose.runtime:runtime-linuxx64:1.13.0-rc01",
             nativeRedirectImplementationCoordinateOrNull(
                 "dev.brahmkshatriya.compose.runtime",
                 "runtime-linuxx64",
@@ -128,7 +128,7 @@ class ComposeNativeRedirectsTest {
             ),
         )
         assertEquals(
-            "androidx.compose.runtime:runtime-retain-linuxx64:1.13.0-beta01",
+            "androidx.compose.runtime:runtime-retain-linuxx64:1.13.0-rc01",
             nativeRedirectImplementationCoordinateOrNull(
                 "dev.brahmkshatriya.compose.runtime",
                 "runtime-retain-linuxx64",
@@ -151,12 +151,12 @@ class ComposeNativeRedirectsTest {
     fun appliesNativeOverlayToConcreteAndSharedNativeConfigurations() {
         assertEquals(true, "linuxX64CompileKlibraries".usesNativeOverlay())
         assertEquals(true, "linuxMainResolvableDependenciesMetadata".usesNativeOverlay())
-        assertEquals(true, "macosMainResolvableDependenciesMetadata".usesNativeOverlay())
+        assertEquals(false, "macosMainResolvableDependenciesMetadata".usesNativeOverlay())
         assertEquals(false, "skiaMainResolvableDependenciesMetadata".usesNativeOverlay())
         assertEquals(false, "appleMainResolvableDependenciesMetadata".usesNativeOverlay())
         assertEquals(true, "desktopNativeMainImplementation".usesNativeOverlay())
-        assertEquals(true, "macosX64CompileKlibraries".usesNativeOverlay())
-        assertEquals(true, "macosArm64RuntimeKlibraries".usesNativeOverlay())
+        assertEquals(false, "macosX64CompileKlibraries".usesNativeOverlay())
+        assertEquals(false, "macosArm64RuntimeKlibraries".usesNativeOverlay())
         assertEquals(false, "commonMainResolvableDependenciesMetadata".usesNativeOverlay())
     }
 

@@ -12,8 +12,8 @@ class ComposeNativeConfigurationsTest {
         assertEquals(true, "linuxX64CompileKlibraries".isDesktopNativeConfiguration())
         assertEquals(true, "linuxArm64RuntimeKlibraries".isDesktopNativeConfiguration())
         assertEquals(true, "mingwX64CompileKlibraries".isDesktopNativeConfiguration())
-        assertEquals(true, "macosX64CompileKlibraries".isDesktopNativeConfiguration())
-        assertEquals(true, "macosArm64RuntimeKlibraries".isDesktopNativeConfiguration())
+        assertEquals(false, "macosX64CompileKlibraries".isDesktopNativeConfiguration())
+        assertEquals(false, "macosArm64RuntimeKlibraries".isDesktopNativeConfiguration())
         assertEquals(
             true,
             "desktopNativeMainResolvableDependenciesMetadata".isDesktopNativeConfiguration(),
@@ -56,7 +56,7 @@ class ComposeNativeConfigurationsTest {
             "linuxMainResolvableDependenciesMetadata".isSharedNativeMetadataConfiguration(),
         )
         assertEquals(
-            true,
+            false,
             "macosMainResolvableDependenciesMetadata".isSharedNativeMetadataConfiguration(),
         )
         assertEquals(

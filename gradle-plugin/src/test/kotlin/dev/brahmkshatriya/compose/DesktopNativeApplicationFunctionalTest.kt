@@ -72,9 +72,19 @@ class DesktopNativeApplicationFunctionalTest {
                     kotlinForVerification.javaClass.methods
                         .first { it.name == "getTargets" && it.parameterCount == 0 }
                         .invoke(kotlinForVerification) as org.gradle.api.NamedDomainObjectContainer<Any>
-                val linuxX64TargetForVerification = targetsForVerification.getByName("linuxX64")
+                val osNameForVerification = System.getProperty("os.name").orEmpty().lowercase()
+                val osArchForVerification = System.getProperty("os.arch").orEmpty().lowercase()
+                val hostTargetNameForVerification = when {
+                    osNameForVerification.contains("mac") && (osArchForVerification == "aarch64" || osArchForVerification == "arm64") -> "macosArm64"
+                    osNameForVerification.contains("mac") -> "macosX64"
+                    osNameForVerification.contains("win") -> "mingwX64"
+                    osArchForVerification == "aarch64" || osArchForVerification == "arm64" -> "linuxArm64"
+                    else -> "linuxX64"
+                }
+                val hostTargetSuffixForVerification = hostTargetNameForVerification.replaceFirstChar { it.uppercaseChar() }
+                val hostTargetForVerification = targetsForVerification.getByName(hostTargetNameForVerification)
 
-                tasks.register("linuxX64AggregateResources")
+                tasks.register(hostTargetNameForVerification + "AggregateResources")
 
                 tasks.register("verifyDesktopNativeExecutables") {
                     doLast {
@@ -161,7 +171,7 @@ class DesktopNativeApplicationFunctionalTest {
                         }
                         check(sourceSets.findByName("desktopMain") == null)
                         listOf(
-                            "linkDebugExecutableLinuxX64",
+                            "linkDebugExecutable" + hostTargetSuffixForVerification,
                             "linkReleaseExecutableLinuxX64",
                             "linkReleaseExecutableLinuxArm64",
                             "linkReleaseExecutableMingwX64",
@@ -183,32 +193,30 @@ class DesktopNativeApplicationFunctionalTest {
                             "prepareMacosArm64ReleaseAppBundle",
                             "packageMacosArm64ReleaseDmg",
                         ).forEach { name ->
-                            check(tasks.findByName(name) != null)
+                            check(tasks.findByName(name) != null) { "Missing task: " + name }
                         }
-                        check(tasks.findByName("runDebugExecutableLinuxX64") != null)
-                        listOf(
-                            "runDebugExecutableMingwX64",
-                            "runDebugExecutableMacosX64",
-                            "runDebugExecutableMacosArm64",
-                        ).forEach { name ->
-                            check(tasks.findByName(name) == null)
-                        }
+                        check(tasks.findByName("runDebugExecutable" + hostTargetSuffixForVerification) != null)
+                        listOf("LinuxX64", "LinuxArm64", "MingwX64", "MacosX64", "MacosArm64")
+                            .filter { it != hostTargetSuffixForVerification }
+                            .forEach { suffix ->
+                                check(tasks.findByName("runDebugExecutable" + suffix) == null) { "Unexpected host run task: " + suffix }
+                            }
                         val runTask = tasks.getByName("runDebugExecutableDesktop")
                         check(runTask is org.gradle.api.tasks.Exec)
-                        val copyTask = tasks.getByName("copyDebugLinuxX64ExecutableResources")
+                        val copyTask = tasks.getByName("copyDebug" + hostTargetSuffixForVerification + "ExecutableResources")
                         check(copyTask in runTask.taskDependencies.getDependencies(runTask))
                         check(tasks.findByName("runReleaseExecutableDesktop") is org.gradle.api.tasks.Exec)
 
                         val importedTargetName =
-                            linuxX64TargetForVerification.javaClass.methods
+                            hostTargetForVerification.javaClass.methods
                                 .first { it.name == "getTargetName" && it.parameterCount == 0 }
-                                .invoke(linuxX64TargetForVerification)
-                        check(importedTargetName == "linuxX64")
+                                .invoke(hostTargetForVerification)
+                        check(importedTargetName == hostTargetNameForVerification)
 
                         val binaries =
-                            linuxX64TargetForVerification.javaClass.methods
+                            hostTargetForVerification.javaClass.methods
                                 .first { it.name == "getBinaries" && it.parameterCount == 0 }
-                                .invoke(linuxX64TargetForVerification) as Iterable<*>
+                                .invoke(hostTargetForVerification) as Iterable<*>
                         val debugExecutable =
                             binaries.filterNotNull().first { binary ->
                                 binary.javaClass.methods
@@ -222,7 +230,7 @@ class DesktopNativeApplicationFunctionalTest {
                             debugExecutable.javaClass.methods
                                 .first { it.name == "getRunTaskName" && it.parameterCount == 0 }
                                 .invoke(debugExecutable)
-                        check(importedRunTaskName == "runDebugExecutableLinuxX64")
+                        check(importedRunTaskName == "runDebugExecutable" + hostTargetSuffixForVerification)
 
                         listOf("linuxX64", "linuxArm64", "macosX64", "macosArm64", "mingwX64").forEach { name ->
                             val target = targetsForVerification.getByName(name)

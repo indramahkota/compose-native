@@ -10,13 +10,22 @@ internal fun composeForkCoordinateFor(
     useDesktopNativeFork: Boolean = false,
     includeJetBrainsAndroidx: Boolean = true,
     includeAndroidx: Boolean,
+    includeUiToolingPreview: Boolean = true,
+    includeComponentsResources: Boolean = true,
 ): String? {
     if (group.startsWith(OFFICIAL_COMPOSE_GROUP_PREFIX)) {
         val family = group.removePrefix(OFFICIAL_COMPOSE_GROUP_PREFIX)
         if (
             (useDesktopNativeFork &&
                 family in COMPOSE_FAMILIES &&
-                !(family == "ui" && (module == UI_UKIT_MODULE || module.startsWith("ui-test")))) ||
+                !(family == "components" &&
+                    !includeComponentsResources &&
+                    module == "components-resources") &&
+                !(family == "ui" &&
+                    (module == UI_UKIT_MODULE ||
+                        module.startsWith("ui-test") ||
+                        (!includeUiToolingPreview &&
+                            module.withoutRedirectPlatformSuffix() == "ui-tooling-preview")))) ||
                 "$family:$module" in CROSS_PLATFORM_COMPOSE_MODULES
         ) {
             return "$FORK_COMPOSE_GROUP_PREFIX$family:$module:$version"
@@ -39,7 +48,9 @@ internal fun composeForkCoordinateFor(
         if (
             family in ANDROIDX_COMPOSE_FAMILIES &&
                 (family != "ui" || useDesktopNativeFork) &&
-                module.removeSuffix("-android") in ANDROIDX_COMPOSE_FORK_MODULES
+                module.removeSuffix("-android") in ANDROIDX_COMPOSE_FORK_MODULES &&
+                (includeUiToolingPreview ||
+                    module.removeSuffix("-android") != "ui-tooling-preview")
         ) {
             return "$FORK_COMPOSE_GROUP_PREFIX$family:$module:$version"
         }

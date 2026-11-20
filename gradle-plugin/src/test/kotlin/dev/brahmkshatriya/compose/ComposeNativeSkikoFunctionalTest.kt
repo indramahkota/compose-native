@@ -134,14 +134,21 @@ class ComposeNativeSkikoFunctionalTest {
                 .build()
         val expectedVersion = explicitVersion ?: "0.156.1"
         for (target in DESKTOP_NATIVE_TARGETS) {
-            val expectedModules =
-                listOf(
-                        "$FORK_SKIKO_GROUP:skiko:$expectedVersion",
-                        "$FORK_SKIKO_GROUP:skiko-${target.sourceSetPrefix.lowercase()}:$expectedVersion",
-                    )
-                    .sorted()
-                    .joinToString(",")
-            assertContains(result.output, "SELECTED ${target.sourceSetPrefix}=$expectedModules")
+            if (target.platform == NativeApplicationPlatform.MACOS) {
+                assertContains(
+                    result.output,
+                    "SELECTED ${target.sourceSetPrefix}=$OFFICIAL_SKIKO_GROUP:skiko:0.156.0",
+                )
+            } else {
+                val expectedModules =
+                    listOf(
+                            "$FORK_SKIKO_GROUP:skiko:$expectedVersion",
+                            "$FORK_SKIKO_GROUP:skiko-${target.sourceSetPrefix.lowercase()}:$expectedVersion",
+                        )
+                        .sorted()
+                        .joinToString(",")
+                assertContains(result.output, "SELECTED ${target.sourceSetPrefix}=$expectedModules")
+            }
         }
         for (target in listOf("jvm", "iosArm64", "wasmJs")) {
             assertContains(result.output, "SELECTED $target=$OFFICIAL_SKIKO_GROUP:skiko:0.156.0")

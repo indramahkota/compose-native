@@ -166,6 +166,9 @@ private fun Project.configureLocalDependencySubstitutions(
                             useDesktopNativeFork = usesNativeOverlay,
                             includeJetBrainsAndroidx = usesNativeOverlay,
                             includeAndroidx = usesNativeOverlay,
+                            includeUiToolingPreview =
+                                !configuration.name.contains("macos", ignoreCase = true),
+                            includeComponentsResources = !isMetadataTransformation,
                         )
                     } ?: return@all
                 details.useTarget(composeTarget)
